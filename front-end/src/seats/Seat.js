@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
-import { listTables, readReservation, updateTable } from "../utils/api";
+import { listTables, readReservation, updateTable, } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
 import "./Seat.css";
 
@@ -17,22 +17,37 @@ function Seat() {
 
   // Load tables //
   useEffect(() => {
+    const controller = new AbortController();
     async function loadTables() {
-      const response = await listTables();
-      setTables(response);
+      try {
+        const response = await listTables(controller.signal);
+        setTables(response);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setError(error);
+        }
+      }
     }
     loadTables();
+    return () => controller.abort();
   }, []);
-  
+
   // Load reservation //
   useEffect(() => {
+    const controller = new AbortController();
     async function loadReservation() {
-      const response = await readReservation(reservation_id);
-      setReservation(response);
+      try {
+        const response = await readReservation(reservation_id, controller.signal);
+        setReservation(response);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setError(error);
+        }
+      }
     }
     loadReservation();
+    return () => controller.abort();
   }, [reservation_id]);
-
 
   // Handle table selection //
   const handleChange = ({ target }) => {
@@ -46,7 +61,6 @@ function Seat() {
       .then(() => history.push("/dashboard"))
       .catch((error) => setError(error));
   }
-
 
   return (
     <main>
@@ -96,5 +110,7 @@ function Seat() {
     </main>
   );
 }
+
+
 
 export default Seat;
